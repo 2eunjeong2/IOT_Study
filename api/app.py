@@ -95,9 +95,25 @@ def timeline(user_id):
     })
 
 # 과제 1. 유저 정보 조회 API
-# 존재하지 않는 유저 요펑 시 400 에러 반환        
+# 존재하지 않는 유저 요청 시 400 에러 반환        
 @app.route('/user/<int:user_id>', methods=['GET'])
 def get_user(user_id):
     if user_id not in app.users:
             return '사용자가 존재하지 않습니다.', 400
-    
+
+# 과제 2. 전체 유저 목록 조회
+# 가입된 모든 유저 목록을 password를 제외하고 반환
+@app.route('/users', methods=['GET'])
+def get_users():
+    user_list = []
+    for user in app.users.values():
+
+        filtered_user = {
+            key: value
+            for key, value in user.items()
+            if key != "password"
+        }
+
+        user_list.append(filtered_user)
+
+    return jsonify(user_list)

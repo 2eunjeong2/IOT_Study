@@ -58,10 +58,9 @@ def follow():
 
     if user_id not in app.users or user_id_to_follow not in app.users:
         return '사용자가 존재하지 않습니다.', 400
-
+        
     user = app.users[user_id]
-    user.setdefault('follow', set()).add(user_id_to_follow) 
-    # 키가 존재하지 않으면 default값을 저장하고, 만일 키가 이미 존재하면 해당 값을 읽어들이는 기능
+    user.setdefault('follow', set()).add(user_id_to_follow) #키가 존재하지 않으면 디폴트값을 저장하고, 만일 키가 이미 존재하면 해당 값을 읽어들이는 기능 
 
     return jsonify(user)
 
@@ -73,10 +72,9 @@ def unfollow():
 
     if user_id not in app.users or user_id_to_follow not in app.users:
         return '사용자가 존재하지 않습니다.', 400
-
+        
     user = app.users[user_id]
-    user.setdefault('follow', set()).discard(user_id_to_follow) 
-    # 키가 존재하지 않으면 default값을 저장하고, 만일 키가 이미 존재하면 해당 값을 읽어들이는 기능
+    user.setdefault('follow', set()).discard(user_id_to_follow) #키가 존재하지 않으면 디폴트값을 저장하고, 만일 키가 이미 존재하면 해당 값을 읽어들이는 기능 
 
     return jsonify(user)
 
@@ -94,61 +92,17 @@ def timeline(user_id):
         'timeline' : timeline
     })
 
-# 과제 1. 유저 정보 조회 API
-# 존재하지 않는 유저 요청 시 400 에러 반환        
-@app.route('/user/<int:user_id>', methods=['GET'])
-def get_user(user_id):
-    if user_id not in app.users:
-            return '사용자가 존재하지 않습니다.', 400
+def create_app(test_config = None):
+    app = Flask(__name__)
 
-# 과제 2. 전체 유저 목록 조회
-# 가입된 모든 유저 목록을 password를 제외하고 반환
-@app.route('/users', methods=['GET'])
-def get_users():
-    user_list = []
-    for user in app.users.values():
+    app.json_encoder = CustomJSONEncoder
 
-        filtered_user = {
-            key: value
-            for key, value in user.items()
-            if key != "password"
-        }
+    if test_config is None:
+        app.config.from_pyfile("config.py")
+    else:
+        app.config.update(test_config)
 
-        user_list.append(filtered_user)
+    database = create_engine(app.config['DB_URL'], encoding = 'utf-8', max_overflow = 0)
+    app.database = database 
 
-    return jsonify(user_list)
-
-# 과제 3. 트윗 삭제 기능
-# 해당 유저의 해당 트윗을 삭제하고 자기 트윗만 삭제하도록 검증
-@app.route('/tweet', methods=['DELETE'])
-def tweet_del():
-    payload = request.json
-    user_id = int(payload['id'])
-    tweet_text = payload['tweet']
-
-    if user_id not in app.users:
-        return '사용자가 존재하지 않습니다.', 400
-
-    deleted = remove_tweet(user_id, tweet_text)
-
-    if not deleted:
-        return '삭제할 트윗이 없습니다.', 400
-
-    return '', 200
-
-    def remove_tweet(user_id, tweet_text):
-
-    new_tweets = []
-    deleted = False
-
-    for tweet in app.tweets:
-
-        if tweet['user_id'] == user_id and tweet['tweet'] == tweet_text:
-            deleted = True
-            continue
-
-        new_tweets.append(tweet)
-
-    app.tweets = new_tweets
-
-    return deleted
+    return app
